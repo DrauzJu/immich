@@ -81,6 +81,7 @@ export interface SystemConfig {
     faces: {
       import: boolean;
     };
+    writeSidecars: boolean;
   };
   oauth: {
     autoLaunch: boolean;
@@ -198,6 +199,7 @@ export const defaults = Object.freeze<SystemConfig>({
     [QueueName.BACKGROUND_TASK]: { concurrency: 5 },
     [QueueName.SMART_SEARCH]: { concurrency: 2 },
     [QueueName.METADATA_EXTRACTION]: { concurrency: 5 },
+    [QueueName.REVERSE_GEOCODING]: { concurrency: 5 },
     [QueueName.FACE_DETECTION]: { concurrency: 2 },
     [QueueName.SEARCH]: { concurrency: 5 },
     [QueueName.SIDECAR]: { concurrency: 5 },
@@ -242,6 +244,7 @@ export const defaults = Object.freeze<SystemConfig>({
     faces: {
       import: false,
     },
+    writeSidecars: true,
   },
   oauth: {
     autoLaunch: false,

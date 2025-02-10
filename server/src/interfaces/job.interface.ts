@@ -4,6 +4,7 @@ import { EmailImageAttachment } from 'src/repositories/notification.repository';
 export enum QueueName {
   THUMBNAIL_GENERATION = 'thumbnailGeneration',
   METADATA_EXTRACTION = 'metadataExtraction',
+  REVERSE_GEOCODING = 'reverseGeocoding',
   VIDEO_CONVERSION = 'videoConversion',
   FACE_DETECTION = 'faceDetection',
   FACIAL_RECOGNITION = 'facialRecognition',
@@ -52,6 +53,7 @@ export enum JobName {
   QUEUE_METADATA_EXTRACTION = 'queue-metadata-extraction',
   METADATA_EXTRACTION = 'metadata-extraction',
   LINK_LIVE_PHOTOS = 'link-live-photos',
+  REVERSE_GEOCODING = 'reverse-geocoding',
 
   // user
   USER_DELETION = 'user-deletion',
@@ -246,6 +248,7 @@ export type JobItem =
   | { name: JobName.QUEUE_METADATA_EXTRACTION; data: IBaseJob }
   | { name: JobName.METADATA_EXTRACTION; data: IEntityJob }
   | { name: JobName.LINK_LIVE_PHOTOS; data: IEntityJob }
+  | { name: JobName.REVERSE_GEOCODING; data: IEntityJob }
   // Sidecar Scanning
   | { name: JobName.QUEUE_SIDECAR; data: IBaseJob }
   | { name: JobName.SIDECAR_DISCOVERY; data: IEntityJob }

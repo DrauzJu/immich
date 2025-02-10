@@ -33,12 +33,18 @@
           bind:checked={config.metadata.faces.import}
           {disabled}
         />
+
+        <SettingSwitch
+          title={$t('admin.metadata_write_sidecars_setting')}
+          bind:checked={config.metadata.writeSidecars}
+          {disabled}
+        />
       </div>
 
       <SettingButtonsRow
         onReset={(options) => onReset({ ...options, configKeys: ['metadata'] })}
         onSave={() => onSave({ metadata: config.metadata })}
-        showResetToDefault={!isEqual(savedConfig.metadata.faces.import, defaultConfig.metadata.faces.import)}
+        showResetToDefault={!isEqual(savedConfig.metadata, defaultConfig.metadata)}
         {disabled}
       />
     </form>

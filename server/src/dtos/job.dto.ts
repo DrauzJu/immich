@@ -63,6 +63,9 @@ export class AllJobStatusResponseDto implements Record<QueueName, JobStatusDto> 
   [QueueName.METADATA_EXTRACTION]!: JobStatusDto;
 
   @ApiProperty({ type: JobStatusDto })
+  [QueueName.REVERSE_GEOCODING]!: JobStatusDto;
+
+  @ApiProperty({ type: JobStatusDto })
   [QueueName.VIDEO_CONVERSION]!: JobStatusDto;
 
   @ApiProperty({ type: JobStatusDto })

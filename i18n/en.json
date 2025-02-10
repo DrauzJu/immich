@@ -155,6 +155,7 @@
     "metadata_faces_import_setting_description": "Import faces from image EXIF data and sidecar files",
     "metadata_settings": "Metadata Settings",
     "metadata_settings_description": "Manage metadata settings",
+    "metadata_write_sidecars_setting": "Write metadata to XMP Sidecars",
     "migration_job": "Migration",
     "migration_job_description": "Migrate thumbnails for assets and faces to the latest folder structure",
     "no_paths_added": "No paths added",

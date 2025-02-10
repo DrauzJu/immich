@@ -148,10 +148,38 @@ export class MetadataService extends BaseService {
     return JobStatus.SUCCESS;
   }
 
+  @OnJob({ name: JobName.REVERSE_GEOCODING, queue: QueueName.REVERSE_GEOCODING })
+  async handleReverseGeocoding({ id }: JobOf<JobName.REVERSE_GEOCODING>): Promise<JobStatus> {
+    const { reverseGeocoding } = await this.getConfig({ withCache: true });
+    if (!reverseGeocoding.enabled) {
+      return JobStatus.SKIPPED;
+    }
+
+    const asset = await this.assetRepository.getById(id, { exifInfo: true });
+    if (!asset) {
+      return JobStatus.FAILED;
+    }
+
+    const geoExifData = await this.getGeo(
+      {
+        latitude: asset.exifInfo?.latitude ?? undefined,
+        longitude: asset.exifInfo?.longitude ?? undefined,
+      },
+      reverseGeocoding
+    );
+
+    await this.assetRepository.upsertExif({
+      assetId: id,
+      ...geoExifData
+    });
+
+    return JobStatus.SUCCESS;
+  }
+
   @OnJob({ name: JobName.METADATA_EXTRACTION, queue: QueueName.METADATA_EXTRACTION })
   async handleMetadataExtraction({ id }: JobOf<JobName.METADATA_EXTRACTION>): Promise<JobStatus> {
     const { metadata, reverseGeocoding } = await this.getConfig({ withCache: true });
-    const [asset] = await this.assetRepository.getByIds([id], { faces: { person: false } });
+    const [asset] = await this.assetRepository.getByIds([id], { faces: { person: false }, exifInfo: true });
     if (!asset) {
       return JobStatus.FAILED;
     }
@@ -163,7 +191,13 @@ export class MetadataService extends BaseService {
     this.logger.verbose('Exif Tags', exifTags);
 
     const { dateTimeOriginal, localDateTime, timeZone, modifyDate } = this.getDates(asset, exifTags);
-    const { latitude, longitude, country, state, city } = await this.getGeo(exifTags, reverseGeocoding);
+    const { latitude, longitude, country, state, city } = await this.getGeo(
+      {
+        latitude: asset.exifInfo?.latitude ?? exifTags.GPSLatitude,
+        longitude: asset.exifInfo?.longitude ?? exifTags.GPSLongitude,
+      },
+      reverseGeocoding
+    );
 
     const { width, height } = this.getImageDimensions(exifTags);
 
@@ -268,16 +302,31 @@ export class MetadataService extends BaseService {
 
   @OnEvent({ name: 'asset.tag' })
   async handleTagAsset({ assetId }: ArgOf<'asset.tag'>) {
+    const { metadata: { writeSidecars }} = await this.getConfig({ withCache: true });
+    if (!writeSidecars) {
+      return;
+    }
+
     await this.jobRepository.queue({ name: JobName.SIDECAR_WRITE, data: { id: assetId, tags: true } });
   }
 
   @OnEvent({ name: 'asset.untag' })
   async handleUntagAsset({ assetId }: ArgOf<'asset.untag'>) {
+    const { metadata: { writeSidecars }} = await this.getConfig({ withCache: true });
+    if (!writeSidecars) {
+      return;
+    }
+
     await this.jobRepository.queue({ name: JobName.SIDECAR_WRITE, data: { id: assetId, tags: true } });
   }
 
   @OnJob({ name: JobName.SIDECAR_WRITE, queue: QueueName.SIDECAR })
   async handleSidecarWrite(job: JobOf<JobName.SIDECAR_WRITE>): Promise<JobStatus> {
+    const { metadata: { writeSidecars }} = await this.getConfig({ withCache: true });
+    if (!writeSidecars) {
+      return JobStatus.SKIPPED;
+    }
+
     const { id, description, dateTimeOriginal, latitude, longitude, rating, tags } = job;
     const [asset] = await this.assetRepository.getByIds([id], { tags: true });
     if (!asset) {
@@ -617,9 +666,12 @@ export class MetadataService extends BaseService {
     return new Date(Math.min(a.valueOf(), b.valueOf()));
   }
 
-  private async getGeo(tags: ImmichTags, reverseGeocoding: SystemConfig['reverseGeocoding']) {
-    let latitude = validate(tags.GPSLatitude);
-    let longitude = validate(tags.GPSLongitude);
+  private async getGeo(
+    location: { latitude: number | undefined, longitude: number | undefined},
+    reverseGeocoding: SystemConfig['reverseGeocoding']
+  ) {
+    let latitude = validate(location.latitude);
+    let longitude = validate(location.longitude);
 
     // TODO take ref into account
 

@@ -179,6 +179,12 @@ class SystemConfigJobDto implements Record<ConcurrentQueueName, JobSettingsDto> 
   @ValidateNested()
   @IsObject()
   @Type(() => JobSettingsDto)
+  [QueueName.REVERSE_GEOCODING]!: JobSettingsDto;
+
+  @ApiProperty({ type: JobSettingsDto })
+  @ValidateNested()
+  @IsObject()
+  @Type(() => JobSettingsDto)
   [QueueName.VIDEO_CONVERSION]!: JobSettingsDto;
 
   @ApiProperty({ type: JobSettingsDto })
@@ -404,6 +410,9 @@ class SystemConfigMetadataDto {
   @ValidateNested()
   @IsObject()
   faces!: SystemConfigFacesDto;
+
+  @IsBoolean()
+  writeSidecars!: boolean;
 }
 
 class SystemConfigServerDto {

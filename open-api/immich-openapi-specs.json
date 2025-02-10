@@ -7869,6 +7869,9 @@
           "notifications": {
             "$ref": "#/components/schemas/JobStatusDto"
           },
+          "reverseGeocoding": {
+            "$ref": "#/components/schemas/JobStatusDto"
+          },
           "search": {
             "$ref": "#/components/schemas/JobStatusDto"
           },
@@ -7898,6 +7901,7 @@
           "metadataExtraction",
           "migration",
           "notifications",
+          "reverseGeocoding",
           "search",
           "sidecar",
           "smartSearch",
@@ -9448,6 +9452,7 @@
         "enum": [
           "thumbnailGeneration",
           "metadataExtraction",
+          "reverseGeocoding",
           "videoConversion",
           "faceDetection",
           "facialRecognition",
@@ -12021,6 +12026,9 @@
           "notifications": {
             "$ref": "#/components/schemas/JobSettingsDto"
           },
+          "reverseGeocoding": {
+            "$ref": "#/components/schemas/JobSettingsDto"
+          },
           "search": {
             "$ref": "#/components/schemas/JobSettingsDto"
           },
@@ -12044,6 +12052,7 @@
           "metadataExtraction",
           "migration",
           "notifications",
+          "reverseGeocoding",
           "search",
           "sidecar",
           "smartSearch",
@@ -12175,10 +12184,14 @@
         "properties": {
           "faces": {
             "$ref": "#/components/schemas/SystemConfigFacesDto"
+          },
+          "writeSidecars": {
+            "type": "boolean"
           }
         },
         "required": [
-          "faces"
+          "faces",
+          "writeSidecars"
         ],
         "type": "object"
       },

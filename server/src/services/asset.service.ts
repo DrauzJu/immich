@@ -292,9 +292,19 @@ export class AssetService extends BaseService {
   private async updateMetadata(dto: ISidecarWriteJob) {
     const { id, description, dateTimeOriginal, latitude, longitude, rating } = dto;
     const writes = _.omitBy({ description, dateTimeOriginal, latitude, longitude, rating }, _.isUndefined);
-    if (Object.keys(writes).length > 0) {
-      await this.assetRepository.upsertExif({ assetId: id, ...writes });
+    if (Object.keys(writes).length === 0) {
+      return;
+    }
+
+    const { metadata: { writeSidecars }} = await this.getConfig({ withCache: true });
+    if (writeSidecars) {
+      // If writeToSidecars is enabled, simply queue a SIDECAR_WRITE job, which will trigger
+      // a METADATA_EXTRACTION job, which will do the reverse geocoding and update the exif data.
       await this.jobRepository.queue({ name: JobName.SIDECAR_WRITE, data: { id, ...writes } });
+    } else {
+      // If writeToSidecars is not enabled, directly update the exit data and trigger reverse geocoding.
+      await this.assetRepository.upsertExif({ assetId: id, ...writes });
+      await this.jobRepository.queue({ name: JobName.REVERSE_GEOCODING, data: { id } });
     }
   }
 }

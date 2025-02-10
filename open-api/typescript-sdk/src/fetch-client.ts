@@ -1210,6 +1210,7 @@ export type SystemConfigFacesDto = {
 };
 export type SystemConfigMetadataDto = {
     faces: SystemConfigFacesDto;
+    writeSidecars: boolean;
 };
 export type SystemConfigNewVersionCheckDto = {
     enabled: boolean;
