@@ -151,7 +151,7 @@ export class MetadataService extends BaseService {
   @OnJob({ name: JobName.METADATA_EXTRACTION, queue: QueueName.METADATA_EXTRACTION })
   async handleMetadataExtraction({ id }: JobOf<JobName.METADATA_EXTRACTION>): Promise<JobStatus> {
     const { metadata, reverseGeocoding } = await this.getConfig({ withCache: true });
-    const [asset] = await this.assetRepository.getByIds([id], { faces: { person: false } });
+    const [asset] = await this.assetRepository.getByIds([id], { faces: { person: false }, exifInfo: true });
     if (!asset) {
       return JobStatus.FAILED;
     }
@@ -163,21 +163,29 @@ export class MetadataService extends BaseService {
     this.logger.verbose('Exif Tags', exifTags);
 
     const { dateTimeOriginal, localDateTime, timeZone, modifyDate } = this.getDates(asset, exifTags);
-    const { latitude, longitude, country, state, city } = await this.getGeo(exifTags, reverseGeocoding);
+    const { latitude, longitude, country, state, city } = await this.getGeo(
+      {
+        latitude: asset.exifInfo?.latitude ?? exifTags.GPSLatitude,
+        longitude: asset.exifInfo?.longitude ?? exifTags.GPSLongitude,
+      },
+      reverseGeocoding);
 
     const { width, height } = this.getImageDimensions(exifTags);
+    const description = String(exifTags.ImageDescription || exifTags.Description || '').trim();
 
+    // Some exif data (the properties specified in UpdateAssetDto) can be updated manually via the Web UI.
+    // If data is already available for these properties, do not overwrite them!
     const exifData: Insertable<Exif> = {
       assetId: asset.id,
 
       // dates
-      dateTimeOriginal,
+      dateTimeOriginal: asset.exifInfo?.dateTimeOriginal ?? dateTimeOriginal,
       modifyDate,
       timeZone,
 
       // gps
-      latitude,
-      longitude,
+      latitude: asset.exifInfo?.latitude ?? latitude,
+      longitude: asset.exifInfo?.longitude ?? longitude,
       country,
       state,
       city,
@@ -202,9 +210,9 @@ export class MetadataService extends BaseService {
       focalLength: validate(exifTags.FocalLength),
 
       // comments
-      description: String(exifTags.ImageDescription || exifTags.Description || '').trim(),
+      description: asset.exifInfo?.description ?? description,
       profileDescription: exifTags.ProfileDescription || null,
-      rating: validateRange(exifTags.Rating, -1, 5),
+      rating: asset.exifInfo?.rating ?? validateRange(exifTags.Rating, -1, 5),
 
       // grouping
       livePhotoCID: (exifTags.ContentIdentifier || exifTags.MediaGroupUUID) ?? null,
@@ -617,9 +625,12 @@ export class MetadataService extends BaseService {
     return new Date(Math.min(a.valueOf(), b.valueOf()));
   }
 
-  private async getGeo(tags: ImmichTags, reverseGeocoding: SystemConfig['reverseGeocoding']) {
-    let latitude = validate(tags.GPSLatitude);
-    let longitude = validate(tags.GPSLongitude);
+  private async getGeo(
+    location: { latitude: number | undefined, longitude: number | undefined},
+    reverseGeocoding: SystemConfig['reverseGeocoding']
+  ) {
+    let latitude = validate(location.latitude);
+    let longitude = validate(location.longitude);
 
     // TODO take ref into account
 
